@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { getInitials } from '@/utils/formatters';
-import logo from '@/assets/logo.jpg';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: Home },
@@ -32,9 +31,6 @@ export function TopBar() {
       <div className="container flex h-16 items-center justify-between">
         {/* Logo and Nav */}
         <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="Reawake Estate" className="h-8 w-auto" />
-          </Link>
           
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map(({ href, label, icon: Icon }) => (
