@@ -1,38 +1,59 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { Organization, User } from '@/types';
 import { api } from '@/utils/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface OrganizationContextType {
   organizationId: string;
   organization: Organization | null;
-  currentUser: User | null;
   setOrganizationId: (id: string) => void;
   loading: boolean;
 }
 
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
-// Default test organization ID
-const DEFAULT_ORG_ID = '11111111-1111-1111-1111-111111111111';
-const DEFAULT_USER_EMAIL = 'sarah@acme.com';
-
 export function OrganizationProvider({ children }: { children: ReactNode }) {
-  const [organizationId, setOrganizationId] = useState(DEFAULT_ORG_ID);
+  const { currentUser } = useAuth();
+  
+  const [organizationId, setOrganizationIdState] = useState<string>(() => {
+    // For admins, check localStorage first
+    if (currentUser?.role === 'ADMIN') {
+      const saved = localStorage.getItem('adminSelectedOrgId');
+      if (saved) return saved;
+    }
+    // Fall back to user's organization
+    return currentUser?.organizationId || '11111111-1111-1111-1111-111111111111';
+  });
+  
   const [organization, setOrganization] = useState<Organization | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Update organizationId when currentUser changes
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.role === 'ADMIN') {
+        const saved = localStorage.getItem('adminSelectedOrgId');
+        if (saved) {
+          setOrganizationIdState(saved);
+        } else {
+          setOrganizationIdState(currentUser.organizationId);
+        }
+      } else {
+        // Regular users always use their organization
+        setOrganizationIdState(currentUser.organizationId);
+        localStorage.removeItem('adminSelectedOrgId');
+      }
+    }
+  }, [currentUser]);
   
   useEffect(() => {
     async function fetchData() {
+      if (!organizationId) return;
+      
       setLoading(true);
       try {
-        const [orgData, userData] = await Promise.all([
-          api.get<Organization>(`/organizations/${organizationId}`).catch(() => null),
-          api.get<User>(`/users/email/${DEFAULT_USER_EMAIL}`).catch(() => null),
-        ]);
-        
+        const orgData = await api.get<Organization>(`/organizations/${organizationId}`).catch(() => null);
         setOrganization(orgData);
-        setCurrentUser(userData);
       } catch (error) {
         console.error('Failed to fetch organization data:', error);
       } finally {
@@ -42,13 +63,19 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     
     fetchData();
   }, [organizationId]);
+
+  const setOrganizationId = useCallback((id: string) => {
+    setOrganizationIdState(id);
+    if (currentUser?.role === 'ADMIN') {
+      localStorage.setItem('adminSelectedOrgId', id);
+    }
+  }, [currentUser]);
   
   return (
     <OrganizationContext.Provider 
       value={{ 
         organizationId, 
         organization, 
-        currentUser, 
         setOrganizationId,
         loading 
       }}

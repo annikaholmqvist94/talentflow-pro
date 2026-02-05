@@ -1,9 +1,10 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Home, Briefcase, Users, Kanban, Bell, Search, ChevronDown } from 'lucide-react';
+import { Home, Briefcase, Users, Kanban, Bell, Search, ChevronDown, LogOut, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { getInitials } from '@/utils/formatters';
 
@@ -24,7 +26,14 @@ const navItems = [
 
 export function TopBar() {
   const location = useLocation();
-  const { currentUser, organization } = useOrganization();
+  const navigate = useNavigate();
+  const { currentUser, logout } = useAuth();
+  const { organization } = useOrganization();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
   
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
@@ -83,21 +92,49 @@ export function TopBar() {
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuLabel>
-                <div className="flex flex-col">
-                  <span className="font-medium">{currentUser?.fullName || 'User'}</span>
-                  <span className="text-xs text-muted-foreground">{currentUser?.email}</span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{currentUser?.fullName || 'User'}</span>
+                    <Badge 
+                      variant={currentUser?.role === 'ADMIN' ? 'default' : 'secondary'}
+                      className="text-xs px-1.5 py-0"
+                    >
+                      {currentUser?.role || 'USER'}
+                    </Badge>
+                  </div>
+                  <span className="text-xs text-muted-foreground font-normal">{currentUser?.email}</span>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-muted-foreground">
                 <span className="text-xs">Organization:</span>
-                <span className="ml-2 font-medium text-foreground">{organization?.name || 'Acme Corp'}</span>
+                <span className="ml-2 font-medium text-foreground">
+                  {organization?.name || currentUser?.organizationName || 'Unknown'}
+                </span>
               </DropdownMenuItem>
+              
+              {currentUser?.role === 'ADMIN' && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="flex items-center cursor-pointer">
+                      <Shield className="mr-2 h-4 w-4" />
+                      Admin Panel
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
+              
               <DropdownMenuSeparator />
-              <DropdownMenuItem disabled>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Logout</DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={handleLogout}
+                className="text-destructive focus:text-destructive cursor-pointer"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

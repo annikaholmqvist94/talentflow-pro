@@ -1,10 +1,10 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useOrganization } from '@/contexts/OrganizationContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { getInitials } from '@/utils/formatters';
 
 export function GreetingCard() {
-  const { currentUser } = useOrganization();
+  const { currentUser } = useAuth();
   const firstName = currentUser?.fullName?.split(' ')[0] || 'there';
   
   return (
