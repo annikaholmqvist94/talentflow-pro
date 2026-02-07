@@ -75,7 +75,7 @@ export function EditCandidateForm({ candidate, onSaved, onCancel }: EditCandidat
     try {
       const body = {
         id: candidate.id,
-        organizationId,
+        organizationId: candidate.organizationId || organizationId,
         fullName: form.fullName.trim(),
         email: form.email.trim(),
         phone: form.phone.trim() || undefined,
@@ -86,6 +86,9 @@ export function EditCandidateForm({ candidate, onSaved, onCancel }: EditCandidat
         isExperienced: form.isExperienced,
         skills: form.skills,
         summary: form.summary.trim() || undefined,
+        notes: candidate.notes,
+        resumeUrl: candidate.resumeUrl,
+        createdAt: candidate.createdAt,
       };
       const updated = await api.put<Candidate>(`/candidates/${candidate.id}`, body);
       toast({ title: 'Candidate updated successfully!' });
