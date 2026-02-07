@@ -30,6 +30,15 @@ const activityIcons: Record<string, React.ReactNode> = {
   scorecard_updated: <BarChart3 className="h-3 w-3" />,
 };
 
+function parseDate(value: string | number): Date {
+  if (typeof value === 'number') {
+    return value < 1e12 ? new Date(value * 1000) : new Date(value);
+  }
+  const d = new Date(value);
+  if (!isNaN(d.getTime())) return d;
+  return new Date();
+}
+
 export function SummaryTab({ candidate }: SummaryTabProps) {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [actLoading, setActLoading] = useState(true);
@@ -146,7 +155,7 @@ export function SummaryTab({ candidate }: SummaryTabProps) {
                   </span>
                   <span>{act.description}</span>
                   <span className="ml-auto text-xs whitespace-nowrap">
-                    {formatDistanceToNow(new Date(act.createdAt), { addSuffix: true })}
+                    {formatDistanceToNow(parseDate(act.createdAt), { addSuffix: true })}
                   </span>
                 </li>
               ))}
