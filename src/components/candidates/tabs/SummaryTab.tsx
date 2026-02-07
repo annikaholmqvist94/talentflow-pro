@@ -122,8 +122,25 @@ export function SummaryTab({ candidate, onCandidateUpdated }: SummaryTabProps) {
         <InlineSkillsEditor
           skills={candidate.skills || []}
           onSave={async (skills) => {
-            const body = { ...candidate, organizationId: candidate.organizationId || organizationId, skills };
+            const body = {
+              id: candidate.id,
+              organizationId: candidate.organizationId || organizationId,
+              fullName: candidate.fullName,
+              email: candidate.email,
+              phone: candidate.phone,
+              linkedinUrl: candidate.linkedinUrl,
+              resumeUrl: candidate.resumeUrl,
+              notes: candidate.notes,
+              city: candidate.city,
+              availability: candidate.availability,
+              educationLevel: candidate.educationLevel,
+              isExperienced: candidate.isExperienced,
+              summary: candidate.summary,
+              skills,
+            };
+            console.log('Saving skills, PUT body:', body);
             const updated = await api.put<Candidate>(`/candidates/${candidate.id}`, body);
+            console.log('Skills save response:', updated);
             toast({ title: 'Skills updated!' });
             onCandidateUpdated?.(updated);
           }}
@@ -132,8 +149,25 @@ export function SummaryTab({ candidate, onCandidateUpdated }: SummaryTabProps) {
         <InlineSummaryEditor
           summary={candidate.summary || ''}
           onSave={async (summary) => {
-            const body = { ...candidate, organizationId: candidate.organizationId || organizationId, summary: summary || undefined };
+            const body = {
+              id: candidate.id,
+              organizationId: candidate.organizationId || organizationId,
+              fullName: candidate.fullName,
+              email: candidate.email,
+              phone: candidate.phone,
+              linkedinUrl: candidate.linkedinUrl,
+              resumeUrl: candidate.resumeUrl,
+              notes: candidate.notes,
+              city: candidate.city,
+              availability: candidate.availability,
+              educationLevel: candidate.educationLevel,
+              isExperienced: candidate.isExperienced,
+              skills: candidate.skills,
+              summary: summary || undefined,
+            };
+            console.log('Saving summary, PUT body:', body);
             const updated = await api.put<Candidate>(`/candidates/${candidate.id}`, body);
+            console.log('Summary save response:', updated);
             toast({ title: 'Summary updated!' });
             onCandidateUpdated?.(updated);
           }}

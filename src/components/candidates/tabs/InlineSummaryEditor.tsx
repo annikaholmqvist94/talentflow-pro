@@ -23,6 +23,8 @@ export function InlineSummaryEditor({ summary, onSave }: InlineSummaryEditorProp
     try {
       await onSave(localSummary.trim());
       setEditing(false);
+    } catch (err) {
+      console.error('Failed to save summary:', err);
     } finally {
       setSaving(false);
     }
