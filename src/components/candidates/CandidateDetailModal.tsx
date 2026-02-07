@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import {useEffect, useState} from 'react';
 import { Candidate } from '@/types';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,11 @@ const tabs: { key: TabKey; label: string }[] = [
 export function CandidateDetailModal({ candidate, open, onClose, onCandidateUpdated }: CandidateDetailModalProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('summary');
   const [isEditing, setIsEditing] = useState(false);
-  const [currentCandidate, setCurrentCandidate] = useState<Candidate | null>(null);
+  const [currentCandidate, setCurrentCandidate] = useState<Candidate | null>(candidate);
+
+  useEffect(() => {
+        setCurrentCandidate(candidate);
+        }, [candidate]);
 
   const displayCandidate = currentCandidate ?? candidate;
 
