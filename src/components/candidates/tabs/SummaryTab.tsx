@@ -143,9 +143,11 @@ export function SummaryTab({ candidate, onCandidateUpdated }: SummaryTabProps) {
             };
             console.log('🔵 Request body:', body);
             const updated = await api.put<Candidate>(`/candidates/${candidate.id}`, body);
-            console.log('✅ Skills save response:', updated);
+            console.log('🔵 Backend response:', updated);
+            const merged: Candidate = { ...candidate, ...updated, skills: updated?.skills || skills };
+            console.log('🔵 Merged candidate:', merged);
             toast({ title: 'Skills updated!' });
-            onCandidateUpdated?.({ ...candidate, ...updated, skills });
+            onCandidateUpdated?.(merged);
           }}
         />
 
@@ -172,9 +174,11 @@ export function SummaryTab({ candidate, onCandidateUpdated }: SummaryTabProps) {
             };
             console.log('🔵 Request body:', body);
             const updated = await api.put<Candidate>(`/candidates/${candidate.id}`, body);
-            console.log('✅ Summary save response:', updated);
+            console.log('🔵 Backend response:', updated);
+            const merged: Candidate = { ...candidate, ...updated, summary: updated?.summary || summary };
+            console.log('🔵 Merged candidate:', merged);
             toast({ title: 'Summary updated!' });
-            onCandidateUpdated?.({ ...candidate, ...updated, summary });
+            onCandidateUpdated?.(merged);
           }}
         />
 
