@@ -21,10 +21,12 @@ export function InlineSummaryEditor({ summary, onSave }: InlineSummaryEditorProp
 
   const handleSave = async () => {
     setSaving(true);
-    console.log('Saving summary:', localSummary.trim());
+    console.log('🔵 InlineSummaryEditor handleSave called');
+    console.log('🔵 Summary to save:', localSummary.trim());
+    console.log('🔵 onSave function exists:', typeof onSave === 'function');
     try {
       await onSave(localSummary.trim());
-      console.log('✅ Summary saved successfully');
+      console.log('✅ Summary onSave completed successfully');
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2000);
       setEditing(false);

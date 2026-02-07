@@ -122,6 +122,9 @@ export function SummaryTab({ candidate, onCandidateUpdated }: SummaryTabProps) {
         <InlineSkillsEditor
           skills={candidate.skills || []}
           onSave={async (skills) => {
+            console.log('🔵 SummaryTab onSave called for skills:', skills);
+            console.log('🔵 Candidate ID:', candidate.id);
+            console.log('🔵 PUT URL:', `/candidates/${candidate.id}`);
             const body = {
               id: candidate.id,
               organizationId: candidate.organizationId || organizationId,
@@ -138,17 +141,19 @@ export function SummaryTab({ candidate, onCandidateUpdated }: SummaryTabProps) {
               summary: candidate.summary,
               skills,
             };
-            console.log('Saving skills, PUT body:', body);
+            console.log('🔵 Request body:', body);
             const updated = await api.put<Candidate>(`/candidates/${candidate.id}`, body);
-            console.log('Skills save response:', updated);
+            console.log('✅ Skills save response:', updated);
             toast({ title: 'Skills updated!' });
-            onCandidateUpdated?.(updated);
+            onCandidateUpdated?.({ ...candidate, ...updated, skills });
           }}
         />
 
         <InlineSummaryEditor
           summary={candidate.summary || ''}
           onSave={async (summary) => {
+            console.log('🔵 SummaryTab onSave called for summary:', summary);
+            console.log('🔵 Candidate ID:', candidate.id);
             const body = {
               id: candidate.id,
               organizationId: candidate.organizationId || organizationId,
@@ -165,11 +170,11 @@ export function SummaryTab({ candidate, onCandidateUpdated }: SummaryTabProps) {
               skills: candidate.skills,
               summary: summary || undefined,
             };
-            console.log('Saving summary, PUT body:', body);
+            console.log('🔵 Request body:', body);
             const updated = await api.put<Candidate>(`/candidates/${candidate.id}`, body);
-            console.log('Summary save response:', updated);
+            console.log('✅ Summary save response:', updated);
             toast({ title: 'Summary updated!' });
-            onCandidateUpdated?.(updated);
+            onCandidateUpdated?.({ ...candidate, ...updated, summary });
           }}
         />
 
