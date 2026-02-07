@@ -20,8 +20,35 @@ function getAvatarUrl(fullName: string) {
   return `https://ui-avatars.com/api/?name=${name}&background=E91E63&color=fff&size=60&bold=true`;
 }
 
+// ✅ Helper function to format education level
+function getEducationLabel(level: string | undefined): string {
+    const labels: Record<string, string> = {
+        high_school: 'High School',
+        bachelor: 'Bachelor',
+        master: 'Master',
+        phd: 'PhD',
+        other: 'Other',
+    };
+    return level ? labels[level] || level : 'Not specified';
+}
+
+// ✅ Helper function to format availability
+function getAvailabilityLabel(availability: string | undefined): string {
+    const labels: Record<string, string> = {
+        available: 'Available',
+        unavailable: 'Unavailable',
+        notice_period: 'Notice Period',
+    };
+    return availability ? labels[availability] || availability : 'Available';
+}
+
 export function CandidateCard({ candidate, onClick }: CandidateCardProps) {
-  const { city, availability, educationLevel, isExperienced } = mockExtras;
+    // ✅ CRITICAL FIX: Use real data from candidate, not mock data
+    const city = candidate.city || 'Not specified';
+    const availability = candidate.availability || 'available';
+    const educationLevel = getEducationLabel(candidate.educationLevel);
+    const isExperienced = candidate.isExperienced ?? true;
+
 
   return (
     <Card
