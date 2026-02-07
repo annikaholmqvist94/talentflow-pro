@@ -12,6 +12,7 @@ export function InlineSummaryEditor({ summary, onSave }: InlineSummaryEditorProp
   const [editing, setEditing] = useState(false);
   const [localSummary, setLocalSummary] = useState(summary);
   const [saving, setSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const startEdit = () => {
     setLocalSummary(summary);
@@ -20,11 +21,15 @@ export function InlineSummaryEditor({ summary, onSave }: InlineSummaryEditorProp
 
   const handleSave = async () => {
     setSaving(true);
+    console.log('Saving summary:', localSummary.trim());
     try {
       await onSave(localSummary.trim());
+      console.log('✅ Summary saved successfully');
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
       setEditing(false);
     } catch (err) {
-      console.error('Failed to save summary:', err);
+      console.error('❌ Failed to save summary:', err);
     } finally {
       setSaving(false);
     }
@@ -57,7 +62,7 @@ export function InlineSummaryEditor({ summary, onSave }: InlineSummaryEditorProp
           <div className="flex justify-end gap-2">
             <Button variant="secondary" size="sm" onClick={handleCancel} disabled={saving}>Cancel</Button>
             <Button size="sm" onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving...' : 'Save'}
+              {saving ? 'Saving...' : showSuccess ? '✓ Saved' : 'Save'}
             </Button>
           </div>
         </div>

@@ -13,6 +13,7 @@ export function InlineSkillsEditor({ skills, onSave }: InlineSkillsEditorProps) 
   const [localSkills, setLocalSkills] = useState<string[]>(skills);
   const [skillInput, setSkillInput] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const startEdit = () => {
     setLocalSkills([...skills]);
@@ -33,11 +34,15 @@ export function InlineSkillsEditor({ skills, onSave }: InlineSkillsEditorProps) 
 
   const handleDone = async () => {
     setSaving(true);
+    console.log('Saving skills:', localSkills);
     try {
       await onSave(localSkills);
+      console.log('✅ Skills saved successfully');
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
       setEditing(false);
     } catch (err) {
-      console.error('Failed to save skills:', err);
+      console.error('❌ Failed to save skills:', err);
     } finally {
       setSaving(false);
     }
@@ -95,7 +100,7 @@ export function InlineSkillsEditor({ skills, onSave }: InlineSkillsEditorProps) 
           <div className="flex justify-end gap-2">
             <Button variant="secondary" size="sm" onClick={handleCancel} disabled={saving}>Cancel</Button>
             <Button size="sm" onClick={handleDone} disabled={saving}>
-              {saving ? 'Saving...' : 'Done'}
+              {saving ? 'Saving...' : showSuccess ? '✓ Saved' : 'Done'}
             </Button>
           </div>
         </div>
