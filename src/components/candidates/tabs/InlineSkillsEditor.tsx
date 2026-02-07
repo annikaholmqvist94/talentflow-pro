@@ -36,6 +36,8 @@ export function InlineSkillsEditor({ skills, onSave }: InlineSkillsEditorProps) 
     try {
       await onSave(localSkills);
       setEditing(false);
+    } catch (err) {
+      console.error('Failed to save skills:', err);
     } finally {
       setSaving(false);
     }
