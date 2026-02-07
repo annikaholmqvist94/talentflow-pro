@@ -45,6 +45,10 @@ export function CandidateDetailModal({ candidate, open, onClose, onCandidateUpda
 
   const handleClose = () => {
     setIsEditing(false);
+    // If candidate was updated locally, ensure parent list refreshes
+    if (currentCandidate) {
+      onCandidateUpdated?.();
+    }
     setCurrentCandidate(null);
     onClose();
   };
