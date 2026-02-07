@@ -1,14 +1,53 @@
+import { useState, useEffect } from 'react';
 import { Candidate } from '@/types';
-import { Mail, Phone, Linkedin, ExternalLink, MapPin, GraduationCap, FileDown } from 'lucide-react';
+import { api } from '@/utils/api';
+import { Mail, Phone, Linkedin, ExternalLink, MapPin, GraduationCap, FileDown, Plus, ArrowRight, FileText, BarChart3, Loader2, AlertCircle } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 interface SummaryTabProps {
   candidate: Candidate;
 }
 
+interface Activity {
+  id: string;
+  activityType: string;
+  description: string;
+  createdAt: string;
+}
+
 const mockSkills = ['React', 'TypeScript', 'Node.js', 'Python', 'PostgreSQL', 'AWS', 'Docker', 'Agile'];
 const mockSummary = 'Experienced full-stack developer with 5+ years building scalable web applications. Strong in React, Node.js, and cloud technologies.';
 
+const activityIcons: Record<string, React.ReactNode> = {
+  candidate_added: <Plus className="h-3 w-3" />,
+  status_changed: <ArrowRight className="h-3 w-3" />,
+  note_added: <FileText className="h-3 w-3" />,
+  scorecard_updated: <BarChart3 className="h-3 w-3" />,
+};
+
 export function SummaryTab({ candidate }: SummaryTabProps) {
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [actLoading, setActLoading] = useState(true);
+  const [actError, setActError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchActivities = async () => {
+      setActLoading(true);
+      setActError(false);
+      try {
+        const data = await api.get<Activity[]>(`/activities/candidate/${candidate.id}`);
+        if (!cancelled) setActivities(data || []);
+      } catch {
+        if (!cancelled) setActError(true);
+      } finally {
+        if (!cancelled) setActLoading(false);
+      }
+    };
+    fetchActivities();
+    return () => { cancelled = true; };
+  }, [candidate.id]);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
       {/* Left Column - Details */}
@@ -55,7 +94,7 @@ export function SummaryTab({ candidate }: SummaryTabProps) {
         </div>
       </div>
 
-      {/* Right Column - Skills & Summary */}
+      {/* Right Column */}
       <div className="lg:col-span-3 space-y-4">
         <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
@@ -63,10 +102,7 @@ export function SummaryTab({ candidate }: SummaryTabProps) {
           </div>
           <div className="flex flex-wrap gap-2">
             {mockSkills.map((skill) => (
-              <span
-                key={skill}
-                className="bg-success text-success-foreground text-sm px-3 py-1 rounded-full font-medium hover:opacity-90 transition"
-              >
+              <span key={skill} className="bg-success text-success-foreground text-sm px-3 py-1 rounded-full font-medium hover:opacity-90 transition">
                 {skill}
               </span>
             ))}
@@ -80,16 +116,31 @@ export function SummaryTab({ candidate }: SummaryTabProps) {
 
         <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
           <h3 className="font-semibold text-foreground mb-3">Recent Activity</h3>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-              Added to pipeline 2 days ago
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-              Moved to SCREENING yesterday
-            </li>
-          </ul>
+          {actLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading activities...
+            </div>
+          ) : actError ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+              <AlertCircle className="h-4 w-4" /> Could not load activities
+            </div>
+          ) : activities.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No recent activity</p>
+          ) : (
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              {activities.map((act) => (
+                <li key={act.id} className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    {activityIcons[act.activityType] || <Plus className="h-3 w-3" />}
+                  </span>
+                  <span>{act.description}</span>
+                  <span className="ml-auto text-xs whitespace-nowrap">
+                    {formatDistanceToNow(new Date(act.createdAt), { addSuffix: true })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>
