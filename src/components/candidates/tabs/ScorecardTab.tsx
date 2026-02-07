@@ -1,21 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { ScoreGridBox } from '../ScoreGridBox';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { useToast } from '@/hooks/use-toast';
+import { api } from '@/utils/api';
 import { BarChart3, Check, Loader2 } from 'lucide-react';
 
-interface Evaluation {
-  category: string;
-  score: number;
-  description: string;
+interface ScorecardData {
+  id?: string;
+  candidateId: string;
+  organizationId: string;
+  technicalSkills: number;
+  communication: number;
+  culturalFit: number;
+  experienceLevel: number;
+  problemSolving: number;
+  overallScore?: number;
+  evaluatedBy?: string | null;
+  notes?: string | null;
+  updatedAt?: string;
 }
 
-const defaultEvaluations: Evaluation[] = [
-  { category: 'Technical Skills', score: 4, description: 'Strong coding abilities, modern frameworks' },
-  { category: 'Communication', score: 4, description: 'Clear communicator, good listener' },
-  { category: 'Cultural Fit', score: 3, description: 'Values align, team player' },
-  { category: 'Experience Level', score: 2, description: 'Some experience, room for growth' },
-  { category: 'Problem Solving', score: 4, description: 'Analytical, creative solutions' },
+const CATEGORY_KEYS = ['technicalSkills', 'communication', 'culturalFit', 'experienceLevel', 'problemSolving'] as const;
+type CategoryKey = typeof CATEGORY_KEYS[number];
+
+const CATEGORIES: { key: CategoryKey; label: string; description: string }[] = [
+  { key: 'technicalSkills', label: 'Technical Skills', description: 'Strong coding abilities, modern frameworks' },
+  { key: 'communication', label: 'Communication', description: 'Clear communicator, good listener' },
+  { key: 'culturalFit', label: 'Cultural Fit', description: 'Values align, team player' },
+  { key: 'experienceLevel', label: 'Experience Level', description: 'Some experience, room for growth' },
+  { key: 'problemSolving', label: 'Problem Solving', description: 'Analytical, creative solutions' },
 ];
 
 interface ScorecardTabProps {
@@ -24,26 +39,120 @@ interface ScorecardTabProps {
 
 export function ScorecardTab({ candidateId }: ScorecardTabProps) {
   const { currentUser } = useAuth();
+  const { organizationId } = useOrganization();
+  const { toast } = useToast();
   const isAdmin = currentUser?.role === 'ADMIN';
-  const [hasScorecard, setHasScorecard] = useState(true);
-  const [evaluations, setEvaluations] = useState<Evaluation[]>(defaultEvaluations);
+
+  const [scores, setScores] = useState<Record<CategoryKey, number>>({
+    technicalSkills: 0,
+    communication: 0,
+    culturalFit: 0,
+    experienceLevel: 0,
+    problemSolving: 0,
+  });
+  const [hasScorecard, setHasScorecard] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [evaluatedBy, setEvaluatedBy] = useState<string | null>(null);
 
-  const overallScore = evaluations.reduce((sum, e) => sum + e.score, 0) / evaluations.length;
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scoresRef = useRef(scores);
+  scoresRef.current = scores;
+
+  // Fetch existing scorecard
+  useEffect(() => {
+    let cancelled = false;
+    const fetchScorecard = async () => {
+      setLoading(true);
+      try {
+        const data = await api.get<ScorecardData>(`/scorecards/candidate/${candidateId}`);
+        if (!cancelled && data) {
+          setScores({
+            technicalSkills: data.technicalSkills || 0,
+            communication: data.communication || 0,
+            culturalFit: data.culturalFit || 0,
+            experienceLevel: data.experienceLevel || 0,
+            problemSolving: data.problemSolving || 0,
+          });
+          setHasScorecard(true);
+          setLastUpdated(data.updatedAt || null);
+          setEvaluatedBy(data.evaluatedBy || null);
+        }
+      } catch {
+        if (!cancelled) setHasScorecard(false);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchScorecard();
+    return () => { cancelled = true; };
+  }, [candidateId]);
+
+  const saveScorecard = useCallback(async (currentScores: Record<CategoryKey, number>) => {
+    setSaveState('saving');
+    try {
+      const body: ScorecardData = {
+        candidateId,
+        organizationId,
+        ...currentScores,
+        evaluatedBy: currentUser?.id || null,
+        notes: null,
+      };
+      const result = await api.post<ScorecardData>('/scorecards', body);
+      if (result?.updatedAt) setLastUpdated(result.updatedAt);
+      if (result?.evaluatedBy) setEvaluatedBy(result.evaluatedBy);
+      setHasScorecard(true);
+      setSaveState('saved');
+      setTimeout(() => setSaveState('idle'), 1500);
+    } catch (err) {
+      setSaveState('idle');
+      toast({ title: 'Failed to save scorecard', description: err instanceof Error ? err.message : 'Unknown error', variant: 'destructive' });
+    }
+  }, [candidateId, organizationId, currentUser?.id, toast]);
+
+  const handleSetScore = (key: CategoryKey, score: number) => {
+    if (!editing) return;
+    const updated = { ...scoresRef.current, [key]: score };
+    setScores(updated);
+
+    // Debounce save
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => saveScorecard(updated), 500);
+  };
+
+  const handleCreateScorecard = () => {
+    const initial: Record<CategoryKey, number> = {
+      technicalSkills: 3, communication: 3, culturalFit: 3, experienceLevel: 3, problemSolving: 3,
+    };
+    setScores(initial);
+    setHasScorecard(true);
+    setEditing(true);
+    saveScorecard(initial);
+  };
+
+  const handleDoneEditing = () => {
+    // Flush pending save
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      saveScorecard(scoresRef.current);
+    }
+    setEditing(false);
+  };
+
+  const filledScores = CATEGORY_KEYS.map(k => scores[k]);
+  const nonZero = filledScores.filter(s => s > 0);
+  const overallScore = nonZero.length > 0 ? nonZero.reduce((a, b) => a + b, 0) / nonZero.length : 0;
   const percentage = Math.round((overallScore / 5) * 100);
 
-  const handleSetScore = (index: number, score: number) => {
-    if (!editing) return;
-    const updated = [...evaluations];
-    updated[index] = { ...updated[index], score };
-    setEvaluations(updated);
-
-    // Auto-save simulation
-    setSaveState('saving');
-    setTimeout(() => setSaveState('saved'), 1000);
-    setTimeout(() => setSaveState('idle'), 2500);
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!hasScorecard) {
     return (
@@ -54,7 +163,7 @@ export function ScorecardTab({ candidateId }: ScorecardTabProps) {
           Create a scorecard to assess their fit for the role.
         </p>
         {isAdmin && (
-          <Button onClick={() => setHasScorecard(true)}>
+          <Button onClick={handleCreateScorecard}>
             Create Scorecard
           </Button>
         )}
@@ -90,24 +199,24 @@ export function ScorecardTab({ candidateId }: ScorecardTabProps) {
 
       {/* Categories */}
       <div className="space-y-3">
-        {evaluations.map((evaluation, index) => (
-          <div key={evaluation.category} className="bg-card border border-border rounded-lg p-4 shadow-sm">
+        {CATEGORIES.map((cat) => (
+          <div key={cat.key} className="bg-card border border-border rounded-lg p-4 shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="font-semibold text-foreground">{evaluation.category}</h4>
-              <span className="text-sm text-muted-foreground">{evaluation.score}/5</span>
+              <h4 className="font-semibold text-foreground">{cat.label}</h4>
+              <span className="text-sm text-muted-foreground">{scores[cat.key]}/5</span>
             </div>
             <div className="flex gap-2 mb-2">
               {[1, 2, 3, 4, 5].map((num) => (
                 <ScoreGridBox
                   key={num}
                   num={num}
-                  filled={num <= evaluation.score}
+                  filled={num <= scores[cat.key]}
                   editable={editing}
-                  onClick={() => handleSetScore(index, num)}
+                  onClick={() => handleSetScore(cat.key, num)}
                 />
               ))}
             </div>
-            <p className="text-sm text-muted-foreground italic">{evaluation.description}</p>
+            <p className="text-sm text-muted-foreground italic">{cat.description}</p>
           </div>
         ))}
       </div>
@@ -116,15 +225,17 @@ export function ScorecardTab({ candidateId }: ScorecardTabProps) {
       <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="text-xs text-muted-foreground">
-            <p>Evaluated by: {currentUser?.fullName || 'Admin User'}</p>
-            <p>Last updated: 2 hours ago • Feb 7, 2026</p>
+            <p>Evaluated by: {evaluatedBy || currentUser?.fullName || 'Unknown'}</p>
+            {lastUpdated && <p>Last updated: {new Date(lastUpdated).toLocaleString()}</p>}
           </div>
           {isAdmin && (
             <Button
               variant={editing ? 'secondary' : 'default'}
               size="sm"
-              onClick={() => setEditing(!editing)}
+              onClick={editing ? handleDoneEditing : () => setEditing(true)}
+              disabled={saveState === 'saving'}
             >
+              {saveState === 'saving' && editing && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
               {editing ? 'Done' : 'Edit Scorecard'}
             </Button>
           )}
