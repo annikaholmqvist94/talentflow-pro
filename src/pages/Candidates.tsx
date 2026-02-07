@@ -27,7 +27,7 @@ import { CandidateCard } from '@/components/candidates/CandidateCard';
 
 export default function Candidates() {
   const { organizationId } = useOrganization();
-  const { candidates, loading, searchCandidates, createCandidate } = useCandidates();
+  const { candidates, loading, searchCandidates, createCandidate, refresh } = useCandidates();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -182,6 +182,7 @@ export default function Candidates() {
         candidate={selectedCandidate}
         open={!!selectedCandidate}
         onClose={() => setSelectedCandidate(null)}
+        onCandidateUpdated={refresh}
       />
     </MainLayout>
   );
