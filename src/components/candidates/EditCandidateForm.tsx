@@ -3,7 +3,7 @@ import { Candidate } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
@@ -15,7 +15,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/utils/api';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { Loader2, X } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 interface EditCandidateFormProps {
   candidate: Candidate;
@@ -32,15 +32,12 @@ interface CandidateFormData {
   availability: string;
   educationLevel: string;
   isExperienced: boolean;
-  skills: string[];
-  summary: string;
 }
 
 export function EditCandidateForm({ candidate, onSaved, onCancel }: EditCandidateFormProps) {
   const { toast } = useToast();
   const { organizationId } = useOrganization();
   const [saving, setSaving] = useState(false);
-  const [skillInput, setSkillInput] = useState('');
 
   const [form, setForm] = useState<CandidateFormData>({
     fullName: candidate.fullName || '',
@@ -51,8 +48,6 @@ export function EditCandidateForm({ candidate, onSaved, onCancel }: EditCandidat
     availability: candidate.availability || 'available',
     educationLevel: candidate.educationLevel || 'bachelor',
     isExperienced: candidate.isExperienced ?? true,
-    skills: candidate.skills || [],
-    summary: candidate.summary || '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -84,8 +79,8 @@ export function EditCandidateForm({ candidate, onSaved, onCancel }: EditCandidat
         availability: form.availability,
         educationLevel: form.educationLevel,
         isExperienced: form.isExperienced,
-        skills: form.skills,
-        summary: form.summary.trim() || undefined,
+        skills: candidate.skills || [],
+        summary: candidate.summary || undefined,
         notes: candidate.notes,
         resumeUrl: candidate.resumeUrl,
         createdAt: candidate.createdAt,
@@ -98,18 +93,6 @@ export function EditCandidateForm({ candidate, onSaved, onCancel }: EditCandidat
     } finally {
       setSaving(false);
     }
-  };
-
-  const addSkill = () => {
-    const skill = skillInput.trim();
-    if (skill && !form.skills.includes(skill)) {
-      setForm(prev => ({ ...prev, skills: [...prev.skills, skill] }));
-    }
-    setSkillInput('');
-  };
-
-  const removeSkill = (skill: string) => {
-    setForm(prev => ({ ...prev, skills: prev.skills.filter(s => s !== skill) }));
   };
 
   const update = (field: keyof CandidateFormData, value: any) => {
@@ -191,38 +174,6 @@ export function EditCandidateForm({ candidate, onSaved, onCancel }: EditCandidat
           />
           <Label htmlFor="edit-experienced" className="cursor-pointer">Experienced candidate</Label>
         </div>
-      </div>
-
-      {/* Skills */}
-      <div className="space-y-1.5">
-        <Label>Skills</Label>
-        <div className="flex gap-2">
-          <Input
-            value={skillInput}
-            onChange={e => setSkillInput(e.target.value)}
-            placeholder="Add a skill..."
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSkill(); } }}
-          />
-          <Button type="button" variant="secondary" onClick={addSkill} size="sm" className="shrink-0">Add</Button>
-        </div>
-        {form.skills.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            {form.skills.map(skill => (
-              <span key={skill} className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-medium px-2.5 py-1 rounded-full">
-                {skill}
-                <button type="button" onClick={() => removeSkill(skill)} className="hover:text-destructive transition-colors">
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Summary */}
-      <div className="space-y-1.5">
-        <Label htmlFor="edit-summary">Professional Summary</Label>
-        <Textarea id="edit-summary" rows={4} value={form.summary} onChange={e => update('summary', e.target.value)} placeholder="Brief professional summary..." />
       </div>
 
       {/* Actions */}

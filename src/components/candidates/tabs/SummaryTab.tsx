@@ -3,9 +3,14 @@ import { Candidate } from '@/types';
 import { api } from '@/utils/api';
 import { Mail, Phone, Linkedin, ExternalLink, MapPin, GraduationCap, FileDown, Plus, ArrowRight, FileText, BarChart3, Loader2, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { InlineSkillsEditor } from './InlineSkillsEditor';
+import { InlineSummaryEditor } from './InlineSummaryEditor';
 
 interface SummaryTabProps {
   candidate: Candidate;
+  onCandidateUpdated?: (updated: Candidate) => void;
 }
 
 interface Activity {
@@ -39,7 +44,9 @@ function parseDate(value: string | number): Date {
   return new Date();
 }
 
-export function SummaryTab({ candidate }: SummaryTabProps) {
+export function SummaryTab({ candidate, onCandidateUpdated }: SummaryTabProps) {
+  const { toast } = useToast();
+  const { organizationId } = useOrganization();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [actLoading, setActLoading] = useState(true);
   const [actError, setActError] = useState(false);
@@ -112,27 +119,25 @@ export function SummaryTab({ candidate }: SummaryTabProps) {
 
       {/* Right Column */}
       <div className="lg:col-span-3 space-y-4">
-        <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-foreground">Skills</h3>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {(candidate.skills && candidate.skills.length > 0) ? candidate.skills.map((skill) => (
-              <span key={skill} className="bg-success text-success-foreground text-sm px-3 py-1 rounded-full font-medium hover:opacity-90 transition">
-                {skill}
-              </span>
-            )) : (
-              <p className="text-sm text-muted-foreground">No skills added</p>
-            )}
-          </div>
-        </div>
+        <InlineSkillsEditor
+          skills={candidate.skills || []}
+          onSave={async (skills) => {
+            const body = { ...candidate, organizationId: candidate.organizationId || organizationId, skills };
+            const updated = await api.put<Candidate>(`/candidates/${candidate.id}`, body);
+            toast({ title: 'Skills updated!' });
+            onCandidateUpdated?.(updated);
+          }}
+        />
 
-        <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
-          <h3 className="font-semibold text-foreground mb-3">Professional Summary</h3>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {candidate.summary || 'No summary provided'}
-          </p>
-        </div>
+        <InlineSummaryEditor
+          summary={candidate.summary || ''}
+          onSave={async (summary) => {
+            const body = { ...candidate, organizationId: candidate.organizationId || organizationId, summary: summary || undefined };
+            const updated = await api.put<Candidate>(`/candidates/${candidate.id}`, body);
+            toast({ title: 'Summary updated!' });
+            onCandidateUpdated?.(updated);
+          }}
+        />
 
         <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
           <h3 className="font-semibold text-foreground mb-3">Recent Activity</h3>
