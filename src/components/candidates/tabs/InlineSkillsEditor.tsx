@@ -33,11 +33,12 @@ export function InlineSkillsEditor({ skills, onSave }: InlineSkillsEditorProps) 
   };
 
   const handleDone = async () => {
-    setSaving(true);
-    console.log('Saving skills:', localSkills);
+    console.log('🔵 InlineSkillsEditor handleDone called');
+    console.log('🔵 Skills to save:', localSkills);
+    console.log('🔵 onSave function exists:', typeof onSave === 'function');
     try {
       await onSave(localSkills);
-      console.log('✅ Skills saved successfully');
+      console.log('✅ Skills onSave completed successfully');
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2000);
       setEditing(false);
