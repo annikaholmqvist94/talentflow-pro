@@ -15,8 +15,13 @@ interface Activity {
   createdAt: string;
 }
 
-const mockSkills = ['React', 'TypeScript', 'Node.js', 'Python', 'PostgreSQL', 'AWS', 'Docker', 'Agile'];
-const mockSummary = 'Experienced full-stack developer with 5+ years building scalable web applications. Strong in React, Node.js, and cloud technologies.';
+const educationLabels: Record<string, string> = {
+  high_school: 'High School',
+  bachelor: 'Bachelor',
+  master: 'Master',
+  phd: 'PhD',
+  other: 'Other',
+};
 
 const activityIcons: Record<string, React.ReactNode> = {
   candidate_added: <Plus className="h-3 w-3" />,
@@ -62,7 +67,9 @@ export function SummaryTab({ candidate }: SummaryTabProps) {
             <div className="flex items-center gap-2">
               <GraduationCap className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Education</span>
-              <span className="font-medium text-foreground ml-auto">Bachelor</span>
+              <span className="font-medium text-foreground ml-auto">
+                {candidate.educationLevel ? educationLabels[candidate.educationLevel] || candidate.educationLevel : 'Not specified'}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-muted-foreground" />
@@ -84,7 +91,7 @@ export function SummaryTab({ candidate }: SummaryTabProps) {
             )}
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
-              <span className="text-foreground">Stockholm, Sweden</span>
+              <span className="text-foreground">{candidate.city || 'Not specified'}</span>
             </div>
             <div className="flex items-center gap-2">
               <FileDown className="h-4 w-4 text-muted-foreground" />
@@ -101,17 +108,21 @@ export function SummaryTab({ candidate }: SummaryTabProps) {
             <h3 className="font-semibold text-foreground">Skills</h3>
           </div>
           <div className="flex flex-wrap gap-2">
-            {mockSkills.map((skill) => (
+            {(candidate.skills && candidate.skills.length > 0) ? candidate.skills.map((skill) => (
               <span key={skill} className="bg-success text-success-foreground text-sm px-3 py-1 rounded-full font-medium hover:opacity-90 transition">
                 {skill}
               </span>
-            ))}
+            )) : (
+              <p className="text-sm text-muted-foreground">No skills added</p>
+            )}
           </div>
         </div>
 
         <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
           <h3 className="font-semibold text-foreground mb-3">Professional Summary</h3>
-          <p className="text-sm text-muted-foreground leading-relaxed">{mockSummary}</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {candidate.summary || 'No summary provided'}
+          </p>
         </div>
 
         <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
