@@ -1,19 +1,26 @@
 import { Candidate } from '@/types';
-import { getInitials } from '@/utils/formatters';
 
 interface CandidateHeaderProps {
   candidate: Candidate;
 }
 
-const mockExtras = {
-  city: 'Stockholm, Sweden',
-  availability: 'available',
-  educationLevel: 'Bachelor',
-  isExperienced: true,
+const educationLabels: Record<string, string> = {
+  high_school: 'High School',
+  bachelor: 'Bachelor',
+  master: 'Master',
+  phd: 'PhD',
+  other: 'Other',
+};
+
+const availabilityDisplay: Record<string, { label: string; icon: string }> = {
+  available: { label: 'Available', icon: '🟢' },
+  notice_period: { label: 'Notice Period', icon: '🟡' },
+  unavailable: { label: 'Unavailable', icon: '🔴' },
 };
 
 export function CandidateHeader({ candidate }: CandidateHeaderProps) {
   const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.fullName)}&background=E91E63&color=fff&size=80&bold=true`;
+  const avail = candidate.availability ? availabilityDisplay[candidate.availability] : null;
 
   return (
     <div className="bg-gradient-to-br from-primary to-secondary p-6 sm:p-8 rounded-t-lg">
@@ -31,22 +38,22 @@ export function CandidateHeader({ candidate }: CandidateHeaderProps) {
             {candidate.fullName}
           </h2>
           <p className="text-sm text-primary-foreground/80 mt-1">
-            📍 {mockExtras.city}
+            📍 {candidate.city || 'Not specified'}
           </p>
           <div className="flex flex-wrap gap-2 mt-3">
-            {mockExtras.availability === 'available' && (
+            {avail && (
               <span className="bg-green-100 text-green-800 border border-green-200 px-2 py-0.5 rounded text-xs font-medium">
-                🟢 Available
+                {avail.icon} {avail.label}
               </span>
             )}
-            <span className="bg-purple-100 text-purple-800 border border-purple-200 px-2 py-0.5 rounded text-xs font-medium">
-              🎓 {mockExtras.educationLevel}
+            {candidate.educationLevel && (
+              <span className="bg-purple-100 text-purple-800 border border-purple-200 px-2 py-0.5 rounded text-xs font-medium">
+                🎓 {educationLabels[candidate.educationLevel] || candidate.educationLevel}
+              </span>
+            )}
+            <span className="bg-blue-100 text-blue-800 border border-blue-200 px-2 py-0.5 rounded text-xs font-medium">
+              {candidate.isExperienced ? '💼 Experienced' : '🌱 Entry Level'}
             </span>
-            {mockExtras.isExperienced && (
-              <span className="bg-blue-100 text-blue-800 border border-blue-200 px-2 py-0.5 rounded text-xs font-medium">
-                💼 Experienced
-              </span>
-            )}
           </div>
         </div>
       </div>
