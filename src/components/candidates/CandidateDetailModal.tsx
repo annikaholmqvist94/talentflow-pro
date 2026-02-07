@@ -91,7 +91,7 @@ export function CandidateDetailModal({ candidate, open, onClose, onCandidateUpda
 
             {/* Tab Content */}
             <div className="flex-1 overflow-y-auto p-6 max-h-[calc(90vh-220px)]">
-              {activeTab === 'summary' && <SummaryTab candidate={displayCandidate} onCandidateUpdated={onCandidateUpdated} />}
+              {activeTab === 'summary' && <SummaryTab candidate={displayCandidate} onCandidateUpdated={(updated) => { setCurrentCandidate(updated); onCandidateUpdated?.(); }} />}
               {activeTab === 'linkedin' && <LinkedInTab candidate={displayCandidate} />}
               {activeTab === 'jobs' && <JobsTab candidate={displayCandidate} />}
               {activeTab === 'notes' && <NotesTab candidate={displayCandidate} onCandidateUpdated={onCandidateUpdated} />}
