@@ -28,6 +28,7 @@ import {
 import { getInitials } from '@/utils/formatters';
 import { Candidate } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { CandidateDetailModal } from '@/components/candidates/CandidateDetailModal';
 
 export default function Candidates() {
   const { organizationId } = useOrganization();
@@ -35,6 +36,7 @@ export default function Candidates() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [newCandidate, setNewCandidate] = useState({
     fullName: '',
     email: '',
@@ -171,18 +173,31 @@ export default function Candidates() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {candidates.map((candidate) => (
-              <CandidateCard key={candidate.id} candidate={candidate} />
+              <CandidateCard 
+                key={candidate.id} 
+                candidate={candidate} 
+                onClick={() => setSelectedCandidate(candidate)}
+              />
             ))}
           </div>
         )}
       </div>
+
+      <CandidateDetailModal
+        candidate={selectedCandidate}
+        open={!!selectedCandidate}
+        onClose={() => setSelectedCandidate(null)}
+      />
     </MainLayout>
   );
 }
 
-function CandidateCard({ candidate }: { candidate: Candidate }) {
+function CandidateCard({ candidate, onClick }: { candidate: Candidate; onClick: () => void }) {
   return (
-    <Card className="card-shadow border-0 hover:shadow-md transition-shadow">
+    <Card 
+      className="card-shadow border-0 hover:shadow-md transition-shadow cursor-pointer"
+      onClick={onClick}
+    >
       <CardContent className="p-6">
         <div className="flex items-start gap-4">
           <Avatar className="h-12 w-12 flex-shrink-0">
@@ -197,6 +212,7 @@ function CandidateCard({ candidate }: { candidate: Candidate }) {
             <div className="space-y-1.5 mt-2">
               <a 
                 href={`mailto:${candidate.email}`}
+                onClick={(e) => e.stopPropagation()}
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 <Mail className="h-4 w-4 flex-shrink-0" />
@@ -215,6 +231,7 @@ function CandidateCard({ candidate }: { candidate: Candidate }) {
                   href={candidate.linkedinUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
                   className="flex items-center gap-2 text-sm text-primary hover:underline"
                 >
                   <Linkedin className="h-4 w-4 flex-shrink-0" />
