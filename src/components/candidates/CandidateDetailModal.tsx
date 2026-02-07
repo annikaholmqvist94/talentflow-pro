@@ -94,7 +94,7 @@ export function CandidateDetailModal({ candidate, open, onClose, onCandidateUpda
               {activeTab === 'summary' && <SummaryTab candidate={displayCandidate} />}
               {activeTab === 'linkedin' && <LinkedInTab candidate={displayCandidate} />}
               {activeTab === 'jobs' && <JobsTab candidate={displayCandidate} />}
-              {activeTab === 'notes' && <NotesTab candidate={displayCandidate} />}
+              {activeTab === 'notes' && <NotesTab candidate={displayCandidate} onCandidateUpdated={onCandidateUpdated} />}
               {activeTab === 'scorecard' && <ScorecardTab candidateId={displayCandidate.id} />}
             </div>
 
