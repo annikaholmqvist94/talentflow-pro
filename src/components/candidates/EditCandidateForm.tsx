@@ -42,18 +42,17 @@ export function EditCandidateForm({ candidate, onSaved, onCancel }: EditCandidat
   const [saving, setSaving] = useState(false);
   const [skillInput, setSkillInput] = useState('');
 
-  const c = candidate as any;
   const [form, setForm] = useState<CandidateFormData>({
     fullName: candidate.fullName || '',
     email: candidate.email || '',
     phone: candidate.phone || '',
     linkedinUrl: candidate.linkedinUrl || '',
-    city: c.city || '',
-    availability: c.availability || 'available',
-    educationLevel: c.educationLevel || 'bachelor',
-    isExperienced: c.isExperienced ?? true,
-    skills: c.skills || [],
-    summary: c.summary || '',
+    city: candidate.city || '',
+    availability: candidate.availability || 'available',
+    educationLevel: candidate.educationLevel || 'bachelor',
+    isExperienced: candidate.isExperienced ?? true,
+    skills: candidate.skills || [],
+    summary: candidate.summary || '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
