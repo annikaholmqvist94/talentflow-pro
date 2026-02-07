@@ -32,6 +32,13 @@ export interface Candidate {
   email: string;
   phone?: string;
   linkedinUrl?: string;
+  city?: string;
+  availability?: string;
+  educationLevel?: string;
+  isExperienced?: boolean;
+  skills?: string[];
+  summary?: string;
+  resumeUrl?: string;
   notes?: string;
   createdAt: string;
 }
