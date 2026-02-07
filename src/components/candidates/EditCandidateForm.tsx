@@ -85,9 +85,24 @@ export function EditCandidateForm({ candidate, onSaved, onCancel }: EditCandidat
         resumeUrl: candidate.resumeUrl,
         createdAt: candidate.createdAt,
       };
+      console.log('PUT body:', body);
       const updated = await api.put<Candidate>(`/candidates/${candidate.id}`, body);
+      console.log('PUT response (updated candidate):', updated);
       toast({ title: 'Candidate updated successfully!' });
-      onSaved(updated);
+      // Pass the updated candidate with form values as fallback
+      const merged: Candidate = {
+        ...candidate,
+        ...updated,
+        fullName: updated.fullName || form.fullName.trim(),
+        email: updated.email || form.email.trim(),
+        phone: (updated.phone ?? form.phone.trim()) || undefined,
+        linkedinUrl: (updated.linkedinUrl ?? form.linkedinUrl.trim()) || undefined,
+        city: (updated.city ?? form.city.trim()) || undefined,
+        availability: updated.availability || form.availability,
+        educationLevel: updated.educationLevel || form.educationLevel,
+        isExperienced: updated.isExperienced ?? form.isExperienced,
+      };
+      onSaved(merged);
     } catch (err) {
       toast({ title: 'Failed to update candidate', description: err instanceof Error ? err.message : 'Unknown error', variant: 'destructive' });
     } finally {
