@@ -1,70 +1,69 @@
-const API_BASE_URL = 'http://localhost:8080/api';
+import { supabase } from '@/lib/supabase';
 
-export class ApiError extends Error {
-  constructor(public statusCode: number, message: string) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
-export async function apiCall<T>(
-  endpoint: string,
-  options?: RequestInit
-): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
-  
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
+async function getAuthHeaders(): Promise<HeadersInit> {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+
+    return {
         'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-    });
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: response.statusText }));
-      throw new ApiError(response.status, error.error || `API Error: ${response.statusText}`);
-    }
-    
-    const result = await response.json();
-    
-    // Extract data from {success, data, error, timestamp} format
-    if (result.success) {
-      return result.data as T;
-    } else {
-      throw new ApiError(400, result.error || 'API call failed');
-    }
-  } catch (error) {
-    if (error instanceof ApiError) {
-      throw error;
-    }
-    // Network error or other issue
-    throw new ApiError(0, error instanceof Error ? error.message : 'Network error');
-  }
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+    };
 }
 
 export const api = {
-  get: <T>(endpoint: string) => apiCall<T>(endpoint),
-  
-  post: <T>(endpoint: string, data: unknown) =>
-    apiCall<T>(endpoint, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  
-  put: <T>(endpoint: string, data: unknown) =>
-    apiCall<T>(endpoint, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
-  
-  patch: <T>(endpoint: string, data?: unknown) =>
-    apiCall<T>(endpoint, {
-      method: 'PATCH',
-      body: data ? JSON.stringify(data) : undefined,
-    }),
-  
-  delete: <T>(endpoint: string) =>
-    apiCall<T>(endpoint, { method: 'DELETE' }),
+    get: async <T>(endpoint: string): Promise<T> => {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            headers: await getAuthHeaders(),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        return result.data;
+    },
+
+    post: async <T>(endpoint: string, data: unknown): Promise<T> => {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: 'POST',
+            headers: await getAuthHeaders(),
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        return result.data;
+    },
+
+    put: async <T>(endpoint: string, data: unknown): Promise<T> => {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: 'PUT',
+            headers: await getAuthHeaders(),
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        return result.data;
+    },
+
+    delete: async (endpoint: string): Promise<void> => {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: 'DELETE',
+            headers: await getAuthHeaders(),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+    },
 };
