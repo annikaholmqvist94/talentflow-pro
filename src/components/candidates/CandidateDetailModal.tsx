@@ -9,7 +9,9 @@ import { JobsTab } from './tabs/JobsTab';
 import { NotesTab } from './tabs/NotesTab';
 import { ScorecardTab } from './tabs/ScorecardTab';
 import { EditCandidateForm } from './EditCandidateForm';
+import { AddToJobDialog } from './AddToJobDialog';
 import { cn } from '@/lib/utils';
+import { Briefcase } from 'lucide-react';
 
 interface CandidateDetailModalProps {
   candidate: Candidate | null;
@@ -31,6 +33,7 @@ const tabs: { key: TabKey; label: string }[] = [
 export function CandidateDetailModal({ candidate, open, onClose, onCandidateUpdated }: CandidateDetailModalProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('summary');
   const [isEditing, setIsEditing] = useState(false);
+  const [showAddToJob, setShowAddToJob] = useState(false);
   const [currentCandidate, setCurrentCandidate] = useState<Candidate | null>(candidate);
 
   useEffect(() => {
@@ -109,8 +112,18 @@ export function CandidateDetailModal({ candidate, open, onClose, onCandidateUpda
             {/* Footer */}
             <div className="border-t border-border p-4 flex justify-end gap-3">
               <Button variant="secondary" onClick={handleClose}>Close</Button>
+              <Button variant="outline" onClick={() => setShowAddToJob(true)}>
+                <Briefcase className="h-4 w-4 mr-2" />
+                Add to Job
+              </Button>
               <Button onClick={() => setIsEditing(true)}>Edit Candidate</Button>
             </div>
+
+            <AddToJobDialog
+              candidate={displayCandidate}
+              open={showAddToJob}
+              onClose={() => setShowAddToJob(false)}
+            />
           </>
         )}
       </DialogContent>
