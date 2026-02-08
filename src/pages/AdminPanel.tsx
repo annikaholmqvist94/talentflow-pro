@@ -19,7 +19,7 @@ interface Organization {
 }
 
 export default function AdminPanel() {
-  const { currentUser, addUser } = useAuth();
+  const { currentUser } = useAuth();
   const { setOrganizationId } = useOrganization();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -123,17 +123,6 @@ export default function AdminPanel() {
         fullName: userFullName,
         organizationId: userOrgId,
         role: userRole,
-      });
-
-      // Add to local auth users so they can login
-      addUser({
-        id: newUserId,
-        email: userEmail,
-        password: userPassword,
-        fullName: userFullName,
-        role: userRole,
-        organizationId: userOrgId,
-        organizationName: selectedOrg?.name || 'Unknown',
       });
 
       toast({
