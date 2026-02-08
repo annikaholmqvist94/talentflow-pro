@@ -90,27 +90,49 @@ export function ScorecardTab({ candidateId }: ScorecardTabProps) {
     return () => { cancelled = true; };
   }, [candidateId]);
 
-  const saveScorecard = useCallback(async (currentScores: Record<CategoryKey, number>) => {
-    setSaveState('saving');
-    try {
-      const body: ScorecardData = {
-        candidateId,
-        organizationId,
-        ...currentScores,
-        evaluatedBy: currentUser?.id || null,
-        notes: null,
-      };
-      const result = await api.post<ScorecardData>('/scorecards', body);
-      if (result?.updatedAt) setLastUpdated(result.updatedAt);
-      if (result?.evaluatedBy) setEvaluatedBy(result.evaluatedBy);
-      setHasScorecard(true);
-      setSaveState('saved');
-      setTimeout(() => setSaveState('idle'), 1500);
-    } catch (err) {
-      setSaveState('idle');
-      toast({ title: 'Failed to save scorecard', description: err instanceof Error ? err.message : 'Unknown error', variant: 'destructive' });
-    }
-  }, [candidateId, organizationId, currentUser?.id, toast]);
+    const saveScorecard = useCallback(async (currentScores: Record<CategoryKey, number>) => {
+        setSaveState('saving');
+        try {
+            // ✅ FIX: Ensure evaluatedBy is valid UUID or omit it
+            const evaluatedByUserId = currentUser?.id; // This is the logged-in user ID
+
+            console.log('🔍 FULL DEBUG:');
+            console.log('  currentUser:', currentUser);
+            console.log('  currentUser?.id:', currentUser?.id);
+            console.log('  evaluatedByUserId:', evaluatedByUserId);
+            console.log('  candidateId:', candidateId);
+            console.log('  organizationId:', organizationId);
+
+            const body: ScorecardData = {
+                candidateId,
+                organizationId,
+                ...currentScores,
+                // ✅ CRITICAL: Only include evaluatedBy if we have a valid user ID
+                ...(evaluatedByUserId && { evaluatedBy: evaluatedByUserId }),
+                notes: null,
+            };
+
+            console.log('📦 BODY BEFORE SENDING:', JSON.stringify(body, null, 2));
+            console.log('📦 Has evaluatedBy?', 'evaluatedBy' in body);
+            console.log('📦 evaluatedBy value:', body.evaluatedBy);
+            console.log('💾 Saving scorecard:', body); // Debug log
+
+            const result = await api.post<ScorecardData>('/scorecards', body);
+            if (result?.updatedAt) setLastUpdated(result.updatedAt);
+            if (result?.evaluatedBy) setEvaluatedBy(result.evaluatedBy);
+            setHasScorecard(true);
+            setSaveState('saved');
+            setTimeout(() => setSaveState('idle'), 1500);
+        } catch (err) {
+            setSaveState('idle');
+            console.error('❌ Scorecard save error:', err); // Debug log
+            toast({
+                title: 'Failed to save scorecard',
+                description: err instanceof Error ? err.message : 'Unknown error',
+                variant: 'destructive'
+            });
+        }
+    }, [candidateId, organizationId, currentUser?.id, toast]);
 
   const handleSetScore = (key: CategoryKey, score: number) => {
     if (!editing) return;
