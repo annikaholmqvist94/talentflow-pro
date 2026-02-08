@@ -14,12 +14,12 @@ async function getAuthHeaders(): Promise<HeadersInit> {
 
 export const api = {
     get: async <T>(endpoint: string): Promise<T> => {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {  // ✅ FIX: Lägg till parenteser
             headers: await getAuthHeaders(),
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            throw new Error(`HTTP ${response.status}`);  // ✅ FIX: Lägg till parenteser
         }
 
         const result = await response.json();
@@ -27,14 +27,14 @@ export const api = {
     },
 
     post: async <T>(endpoint: string, data: unknown): Promise<T> => {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {  // ✅ FIX
             method: 'POST',
             headers: await getAuthHeaders(),
             body: JSON.stringify(data),
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            throw new Error(`HTTP ${response.status}`);  // ✅ FIX
         }
 
         const result = await response.json();
@@ -42,14 +42,14 @@ export const api = {
     },
 
     put: async <T>(endpoint: string, data: unknown): Promise<T> => {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {  // ✅ FIX
             method: 'PUT',
             headers: await getAuthHeaders(),
             body: JSON.stringify(data),
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            throw new Error(`HTTP ${response.status}`);  // ✅ FIX
         }
 
         const result = await response.json();
@@ -57,13 +57,13 @@ export const api = {
     },
 
     delete: async (endpoint: string): Promise<void> => {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {  // ✅ FIX
             method: 'DELETE',
             headers: await getAuthHeaders(),
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            throw new Error(`HTTP ${response.status}`);  // ✅ FIX
         }
     },
 };

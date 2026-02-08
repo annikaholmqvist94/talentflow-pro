@@ -18,8 +18,8 @@ export function ActiveApplicationsCard() {
   useEffect(() => {
     async function fetchApplications() {
       try {
-        const data = await api.get<Application[]>(`/applications/organization/${organizationId}`);
-        // Filter to active (non-rejected) applications
+          const data = await api.get<Application[]>(`/applications/organization/${organizationId}`);
+          // Filter to active (non-rejected) applications
         const active = (data || []).filter(app => app.status !== 'REJECTED').slice(0, 4);
         setApplications(active);
       } catch (err) {
