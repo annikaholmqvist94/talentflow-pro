@@ -21,6 +21,8 @@ import { Search, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/utils/api';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { CandidateDetailModal } from '@/components/candidates/CandidateDetailModal';
+import { Candidate } from '@/types';
 
 const statuses: ApplicationStatus[] = ['NEW', 'SCREENING', 'INTERVIEW', 'OFFER', 'REJECTED'];
 
@@ -33,6 +35,7 @@ export function KanbanBoard({ jobId: propJobId }: KanbanBoardProps) {
   const [selectedJobId, setSelectedJobId] = useState<string>(propJobId || 'all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
+  const [selectedCandidateForDetail, setSelectedCandidateForDetail] = useState<Candidate | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Application[] | null>(null);
@@ -222,7 +225,13 @@ export function KanbanBoard({ jobId: propJobId }: KanbanBoardProps) {
                 key={status}
                 status={status}
                 applications={displayGrouped[status]}
-                onCardClick={setSelectedApplication}
+                onCardClick={(app) => {
+                  if (app.candidate) {
+                    setSelectedCandidateForDetail(app.candidate);
+                  } else {
+                    setSelectedApplication(app);
+                  }
+                }}
               />
             ))}
           </div>
@@ -231,7 +240,14 @@ export function KanbanBoard({ jobId: propJobId }: KanbanBoardProps) {
             {activeApplication && (
               <div className="w-[280px]">
                 <ApplicationCard application={activeApplication} />
-              </div>
+
+      {/* Candidate Detail Modal */}
+      <CandidateDetailModal
+        candidate={selectedCandidateForDetail}
+        open={!!selectedCandidateForDetail}
+        onClose={() => setSelectedCandidateForDetail(null)}
+      />
+    </div>
             )}
           </DragOverlay>
         </DndContext>

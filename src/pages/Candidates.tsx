@@ -5,7 +5,6 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Dialog,
   DialogContent,
@@ -18,23 +17,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { 
   Search, 
   Plus, 
-  Mail, 
-  Phone, 
-  Linkedin,
   Loader2,
   Users,
-  ExternalLink
 } from 'lucide-react';
-import { getInitials } from '@/utils/formatters';
 import { Candidate } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { CandidateDetailModal } from '@/components/candidates/CandidateDetailModal';
+import { CandidateCard } from '@/components/candidates/CandidateCard';
 
 export default function Candidates() {
   const { organizationId } = useOrganization();
-  const { candidates, loading, searchCandidates, createCandidate } = useCandidates();
+  const { candidates, loading, searchCandidates, createCandidate, refresh } = useCandidates();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [newCandidate, setNewCandidate] = useState({
     fullName: '',
     email: '',
@@ -171,67 +168,23 @@ export default function Candidates() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {candidates.map((candidate) => (
-              <CandidateCard key={candidate.id} candidate={candidate} />
+              <CandidateCard 
+                key={candidate.id} 
+                candidate={candidate} 
+                onClick={() => setSelectedCandidate(candidate)}
+              />
             ))}
           </div>
         )}
       </div>
+
+      <CandidateDetailModal
+        candidate={selectedCandidate}
+        open={!!selectedCandidate}
+        onClose={() => setSelectedCandidate(null)}
+        onCandidateUpdated={refresh}
+      />
     </MainLayout>
   );
 }
 
-function CandidateCard({ candidate }: { candidate: Candidate }) {
-  return (
-    <Card className="card-shadow border-0 hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex items-start gap-4">
-          <Avatar className="h-12 w-12 flex-shrink-0">
-            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-              {getInitials(candidate.fullName)}
-            </AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-lg truncate">{candidate.fullName}</h3>
-            
-            <div className="space-y-1.5 mt-2">
-              <a 
-                href={`mailto:${candidate.email}`}
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Mail className="h-4 w-4 flex-shrink-0" />
-                <span className="truncate">{candidate.email}</span>
-              </a>
-              
-              {candidate.phone && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Phone className="h-4 w-4 flex-shrink-0" />
-                  <span>{candidate.phone}</span>
-                </div>
-              )}
-              
-              {candidate.linkedinUrl && (
-                <a 
-                  href={candidate.linkedinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-primary hover:underline"
-                >
-                  <Linkedin className="h-4 w-4 flex-shrink-0" />
-                  <span>LinkedIn Profile</span>
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        {candidate.notes && (
-          <p className="text-sm text-muted-foreground mt-4 bg-muted/50 rounded-lg p-3 line-clamp-2">
-            {candidate.notes}
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
