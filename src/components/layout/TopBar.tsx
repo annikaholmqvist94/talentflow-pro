@@ -30,8 +30,8 @@ export function TopBar() {
   const { currentUser, logout } = useAuth();
   const { organization } = useOrganization();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login', { replace: true });
   };
   

@@ -20,22 +20,20 @@ export default function Login() {
     setError('');
     setIsSubmitting(true);
 
-    // Basic validation
     if (!email || !password) {
       setError('Please enter both email and password');
       setIsSubmitting(false);
       return;
     }
 
-    // Attempt login
-    const success = login(email, password);
-    
-    if (success) {
+    const result = await login(email, password);
+
+    if (result.success) {
       navigate('/', { replace: true });
     } else {
-      setError('Invalid email or password');
+      setError(result.error || 'Invalid email or password');
     }
-    
+
     setIsSubmitting(false);
   };
 
@@ -61,7 +59,7 @@ export default function Login() {
                 <span>{error}</span>
               </div>
             )}
-            
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -75,7 +73,7 @@ export default function Login() {
                 className="h-11"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -89,23 +87,15 @@ export default function Login() {
                 className="h-11"
               />
             </div>
-            
-            <Button 
-              type="submit" 
+
+            <Button
+              type="submit"
               className="w-full h-11 text-base"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Signing in...' : 'Log In'}
             </Button>
           </form>
-
-          <div className="mt-6 pt-6 border-t text-center text-sm text-muted-foreground">
-            <p className="font-medium mb-2">Demo Credentials:</p>
-            <div className="space-y-1 text-xs">
-              <p>Admin: admin@acme.com / admin123</p>
-              <p>User: user@acme.com / user123</p>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
