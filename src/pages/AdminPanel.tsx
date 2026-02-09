@@ -120,6 +120,7 @@ export default function AdminPanel() {
       await api.post('/users', {
         id: newUserId,
         email: userEmail,
+        password: userPassword,
         fullName: userFullName,
         organizationId: userOrgId,
         role: userRole,
