@@ -1,4 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+import { api } from '@/utils/api';
+import type { Session } from '@supabase/supabase-js';
 
 export interface AuthUser {
     id: string;
@@ -9,76 +12,100 @@ export interface AuthUser {
     organizationName?: string;
 }
 
-interface StoredUser extends AuthUser {
-    password: string;
-}
-
 interface AuthContextType {
     currentUser: AuthUser | null;
-    login: (email: string, password: string) => boolean;
-    logout: () => void;
+    session: Session | null;
+    login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+    logout: () => Promise<void>;
     isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ✅ Mock users with REAL IDs from Supabase database
-const DEFAULT_USERS: StoredUser[] = [
-    {
-        id: '8615009f-57bc-43a8-83f9-6c14fe42a276', // ✅ REAL ID from database!
-        email: 'admin@acme.com',
-        password: 'admin123',
-        role: 'ADMIN',
-        fullName: 'Admin User',
-        organizationId: '11111111-1111-1111-1111-111111111111',
-        organizationName: 'Acme Corp'
-    },
-    {
-        id: 'e31c9580-3d88-4018-a69a-d0d6747c19ef', // ✅ REAL ID from database!
-        email: 'test@acme.com',
-        password: 'admin123',
-        role: 'ADMIN',
-        fullName: 'Test User',
-        organizationId: '11111111-1111-1111-1111-111111111111',
-        organizationName: 'Acme Corp'
+async function fetchUserProfile(email: string): Promise<AuthUser | null> {
+    try {
+        const user = await api.get<AuthUser>(`/users/email/${encodeURIComponent(email)}`);
+        return user;
+    } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+        return null;
     }
-];
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+    const [session, setSession] = useState<Session | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Check localStorage on mount
-        const stored = localStorage.getItem('currentUser');
-        if (stored) {
-            try {
-                setCurrentUser(JSON.parse(stored));
-            } catch {
-                localStorage.removeItem('currentUser');
+        // Set up auth state listener FIRST
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            (event, newSession) => {
+                setSession(newSession);
+
+                if (!newSession) {
+                    setCurrentUser(null);
+                    setIsLoading(false);
+                    return;
+                }
+
+                // Defer profile fetch to avoid deadlock
+                if (newSession.user?.email) {
+                    setTimeout(() => {
+                        fetchUserProfile(newSession.user.email!).then((profile) => {
+                            setCurrentUser(profile);
+                            setIsLoading(false);
+                        });
+                    }, 0);
+                }
             }
-        }
-        setIsLoading(false);
+        );
+
+        // THEN check for existing session
+        supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+            setSession(existingSession);
+            if (existingSession?.user?.email) {
+                fetchUserProfile(existingSession.user.email).then((profile) => {
+                    setCurrentUser(profile);
+                    setIsLoading(false);
+                });
+            } else {
+                setIsLoading(false);
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
-    const login = useCallback((email: string, password: string): boolean => {
-        const user = DEFAULT_USERS.find(u => u.email === email && u.password === password);
-        if (user) {
-            const { password: _, ...userWithoutPassword } = user;
-            setCurrentUser(userWithoutPassword);
-            localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
-            return true;
+    const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            return { success: false, error: error.message };
         }
-        return false;
+
+        if (data.session) {
+            setSession(data.session);
+            const profile = await fetchUserProfile(email);
+            if (profile) {
+                setCurrentUser(profile);
+                return { success: true };
+            }
+            return { success: false, error: 'User profile not found in backend' };
+        }
+
+        return { success: false, error: 'Login failed' };
     }, []);
 
-    const logout = useCallback(() => {
+    const logout = useCallback(async () => {
+        await supabase.auth.signOut();
         setCurrentUser(null);
-        localStorage.removeItem('currentUser');
+        setSession(null);
+        localStorage.removeItem('adminSelectedOrgId');
     }, []);
 
     return (
-        <AuthContext.Provider value={{ currentUser, login, logout, isLoading }}>
+        <AuthContext.Provider value={{ currentUser, session, login, logout, isLoading }}>
             {children}
         </AuthContext.Provider>
     );
